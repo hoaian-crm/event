@@ -1,20 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Observable } from 'rxjs';
 import { Repository } from 'typeorm';
-import { CreateEvent, FindEvent, IEvent, IEventService } from './event';
 import { Event } from './event.entity';
+import {
+  CreateEventDto,
+  EmitEventDto,
+  GetEventDto,
+  IEvent,
+} from 'src/prototypes/gen/ts/interfaces/event';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
-export class EventService implements IEventService {
+export class EventService {
   constructor(
     @InjectRepository(Event) private eventRepository: Repository<Event>,
   ) {}
-  Find(request: FindEvent): Observable<IEvent> {
-    throw new Error('Method not implemented.');
+
+  async Get(request: GetEventDto): Promise<IEvent> {
+    console.log('request is: ', request);
+    const event = await this.eventRepository.findOne({ where: request });
+    if (!event) {
+      throw new RpcException(new NotFoundException('Event not found'));
+    }
+    return event;
   }
 
-  async Create(request: CreateEvent): Promise<Event> {
+  async Create(request: CreateEventDto): Promise<Event> {
     let event = await this.eventRepository.findOne({
       where: { name: request.name },
     });
@@ -25,7 +36,7 @@ export class EventService implements IEventService {
     return event;
   }
 
-  async find(request: FindEvent): Promise<Event[]> {
-    return await this.eventRepository.find(request);
+  async Emit(request: EmitEventDto) {
+
   }
 }
