@@ -4,11 +4,21 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
       package: 'event',
       protoPath: 'src/prototypes/interfaces/event.proto',
+    },
+  });
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      url: 'localhost:5001',
+      package: 'listener',
+      protoPath: 'src/prototypes/interfaces/listener.proto',
     },
   });
 
