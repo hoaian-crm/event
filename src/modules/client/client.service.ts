@@ -1,21 +1,32 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { Channel, Connection, connect } from 'amqplib/callback_api';
 import { EmitEventDto } from 'src/prototypes/gen/ts/interfaces/event';
 import { Event } from '../event/event.entity';
 import { EventService } from '../event/event.service';
+import { Listener } from '../listener/listener.entity';
+import { ListenerService } from '../listener/listener.service';
 
 @Injectable()
 export class ClientService {
   connection: Connection;
   channel: Channel;
   events: Array<Event>;
+  listeners: Array<Listener>;
   constructor(
     @Inject(forwardRef(() => EventService))
     private eventService: EventService,
+    @Inject(forwardRef(() => ListenerService))
+    private listenerService: ListenerService,
   ) {}
 
   async connect(): Promise<Connection> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       connect(process.env.AMQP_LINK, (err, connection) => {
         if (err) throw err;
         resolve(connection);
@@ -24,42 +35,49 @@ export class ClientService {
   }
 
   async createChannel(): Promise<Channel> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.connection.createChannel((err, channel) => {
         if (err) throw err;
         resolve(channel);
       });
 
       this.connection.on('error', function (error) {
-        console.log(error);
-        this.createChannel().then((channel) => (this.channel = channel));
+        console.error(error);
       });
     });
   }
 
-  async assertExchanges() {
+  async syncEvent() {
+    this.events = await this.eventService.Find();
     this.events.map((event) =>
-      this.channel.assertExchange(event.name, 'fanout', { durable: true }),
+      this.channel.assertExchange(event.name, 'fanout', { durable: false }),
     );
   }
 
-  async syncEvent() {
-    this.events = await this.eventService.Find();
+  async syncListener() {
+    this.listeners = await this.listenerService.Find();
+    this.listeners.map((listener) => {
+      this.channel.assertQueue(listener.name, { durable: false });
+      this.channel.bindQueue(listener.name, listener.event.name, '');
+    });
   }
 
   async onModuleInit() {
     this.connection = await this.connect(); // NOTE: call this first
     this.channel = await this.createChannel();
     await this.syncEvent();
-    this.assertExchanges();
+    await this.syncListener();
   }
 
   async emit(request: EmitEventDto) {
-    console.log('request is: ', request);
+    if (!this.events.find((e) => e.name === request.name)) {
+      throw new RpcException(new BadRequestException('Not found event'));
+    }
+
     return this.channel.publish(
       request.name,
       '',
-      Buffer.from(JSON.stringify(request.userRegister)),
+      Buffer.from(JSON.stringify(request[Object.keys(request)[1]])),
     );
   }
 }

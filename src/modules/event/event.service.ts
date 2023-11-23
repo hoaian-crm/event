@@ -25,7 +25,6 @@ export class EventService {
   ) {}
 
   async Get(request: GetEventDto): Promise<IEvent> {
-    console.log('request is: ', request);
     const event = await this.eventRepository.findOne({ where: request });
     if (!event) {
       throw new RpcException(new NotFoundException('Event not found'));

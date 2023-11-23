@@ -1,16 +1,17 @@
+import { IListener } from 'src/prototypes/gen/ts/interfaces/listener';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
-  OneToOne,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Event } from '../event/event.entity';
 
 @Entity('listeners')
-export class Listener {
+export class Listener implements IListener {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -20,7 +21,7 @@ export class Listener {
   @Column()
   description: string;
 
-  @OneToOne((type) => Event)
+  @ManyToOne(() => Event)
   @JoinColumn({ name: 'event_id' })
   event: Event;
 

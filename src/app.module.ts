@@ -24,7 +24,7 @@ import { ListenerModule } from './modules/listener/listener.module';
     // Another module
     EventModule,
     ClientModule,
-    ListenerModule
+    ListenerModule,
   ],
 })
 export class AppModule {}

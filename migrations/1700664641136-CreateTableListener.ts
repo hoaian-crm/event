@@ -1,3 +1,4 @@
+//@ts-ignore
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateTableListener1700664641136 implements MigrationInterface {
@@ -12,7 +13,7 @@ export class CreateTableListener1700664641136 implements MigrationInterface {
             "deletedAt" timestamp,
             event_id int not null,
             primary key (id),
-            constraint fk_event foreign key(id) references events(id)
+            constraint fk_event foreign key(event_id) references events(id)
         )
     `);
   }

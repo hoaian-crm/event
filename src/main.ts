@@ -8,17 +8,12 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      package: 'event',
-      protoPath: 'src/prototypes/interfaces/event.proto',
-    },
-  });
-
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      url: 'localhost:5001',
-      package: 'listener',
-      protoPath: 'src/prototypes/interfaces/listener.proto',
+      package: ['event', 'listener'],
+      protoPath: [
+        'src/prototypes/interfaces/event.proto',
+        'src/prototypes/interfaces/listener.proto',
+        'src/prototypes/interfaces/mail.proto',
+      ],
     },
   });
 
