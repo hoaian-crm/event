@@ -69,6 +69,10 @@ export class ClientService {
     await this.syncListener();
   }
 
+  getValueFromPayload(request: EmitEventDto) {
+    return request.payload[Object.keys(request.payload)[0]];
+  }
+
   async emit(request: EmitEventDto) {
     if (!this.events.find((e) => e.name === request.name)) {
       throw new RpcException(new BadRequestException('Not found event'));
@@ -77,7 +81,7 @@ export class ClientService {
     return this.channel.publish(
       request.name,
       '',
-      Buffer.from(JSON.stringify(request[Object.keys(request)[1]])),
+      Buffer.from(JSON.stringify(this.getValueFromPayload(request))),
     );
   }
 }
